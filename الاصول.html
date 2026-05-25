@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سجل جرد الأصول</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --gold: #d4af37;
+            --gold2: #f0c040;
+            --text: #e6edf3;
+            --sub: #8b949e;
+            --border: #30363d;
+            --input: #21262d;
+            --red: #da3633;
+            --green: #2ea043;
+            --shadow: rgba(0,0,0,0.5);
+            --btn-text: #2b1a00;
+        }
+        .light-mode {
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --gold: #b8860b;
+            --gold2: #d4a017;
+            --text: #1a1a1a;
+            --sub: #555555;
+            --border: #cccccc;
+            --input: #ffffff;
+            --shadow: rgba(0,0,0,0.1);
+            --btn-text: #ffffff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 20px;
+            transition: background 0.3s, color 0.3s;
+        }
+        .container {
+            width: 100%;
+            max-width: 700px;
+            min-width: 320px;
+        }
+        .logo {
+            display: block;
+            width: 90px;
+            height: auto;
+            margin: 0 auto 12px;
+            filter: drop-shadow(0 0 8px rgba(212,175,55,0.4));
+        }
+        h1 { text-align: center; color: var(--gold); margin-bottom: 4px; font-size: 24px; }
+        .sub { text-align: center; color: var(--sub); margin-bottom: 16px; font-size: 14px; }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px var(--shadow);
+            width: 100%;
+            display: block;
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        .card h3 {
+            color: var(--gold2);
+            margin-bottom: 16px;
+            font-size: 18px;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: var(--sub); margin-bottom: 5px; }
+        input, select, textarea {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s, background 0.3s, color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--gold); }
+        .image-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .image-preview {
+            width: 55px;
+            height: 55px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            object-fit: cover;
+            display: none;
+        }
+        .btn-image {
+            background: var(--input);
+            color: var(--gold);
+            padding: 10px 16px;
+            border: 1px solid var(--gold);
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.3s, color 0.3s;
+        }
+        .progress-ring { display: none; margin-left: 10px; }
+        .progress-ring svg { width: 38px; height: 38px; }
+        .progress-ring .bg { fill: none; stroke: var(--border); stroke-width: 3; }
+        .progress-ring .fill {
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 3;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.3s;
+        }
+
+        .btn3d {
+            position: relative;
+            top: -4px;
+            border: 0;
+            transition: all 40ms linear;
+            margin-top: 14px;
+            outline: none !important;
+            -webkit-tap-highlight-color: transparent;
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            font-family: inherit;
+            letter-spacing: 1px;
+            text-align: center;
+            color: var(--btn-text);
+            box-shadow: 0 0 0 1px #c9a020 inset, 0 0 0 2px rgba(255,255,255,0.15) inset, 0 8px 0 0 #6b4c0a, 0 8px 8px 1px rgba(0,0,0,0.5);
+            background: linear-gradient(180deg, #fde482 0%, #e6b422 50%, #aa7c11 100%);
+        }
+        .btn3d:active { top: 2px; box-shadow: 0 0 0 1px #c9a020 inset, 0 1px 3px 1px rgba(0,0,0,0.3); }
+        .btn3d:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .progress-container { display: none; margin: 12px 0; }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: var(--input);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--gold);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.3s;
+        }
+        .modal.active { visibility: visible; opacity: 1; }
+        .modal-box {
+            background: var(--card);
+            border: 1px solid var(--gold);
+            border-radius: 20px;
+            padding: 28px 22px;
+            text-align: center;
+            color: var(--text);
+            max-width: 340px;
+            width: 90%;
+            transition: background 0.3s, border-color 0.3s, color 0.3s;
+        }
+        .modal-box p { margin-bottom: 16px; font-size: 16px; }
+        .modal-box .nickname-highlight {
+            color: var(--gold);
+            font-weight: 900;
+            font-size: 120%;
+        }
+        .logout-btn {
+            background: var(--red);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: inherit;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            background: var(--card);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            z-index: 500;
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: background 0.3s, color 0.3s;
+        }
+        .theme-toggle:hover { background: var(--gold); color: #000; }
+        .footer { text-align: center; margin-top: 20px; color: var(--sub); font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <!-- زر تغيير المود -->
+    <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</div>
+
+    <!-- نافذة التحقق من الهوية -->
+    <div class="modal active" id="authModal">
+        <div class="modal-box">
+            <h3>التحقق من الهوية</h3>
+            <p>يرجى إدخال رقمك العسكري للمتابعة</p>
+            <input type="text" id="militaryIdInput" placeholder="الرقم العسكري">
+            <button class="btn3d" onclick="authenticate()">دخول</button>
+            <p style="color:var(--red); margin-top:8px;" id="authMsg"></p>
+        </div>
+    </div>
+
+    <!-- نافذة الترحيب -->
+    <div class="modal" id="welcomeModal">
+        <div class="modal-box">
+            <p>أهلاً <span id="welcomeNickname" class="nickname-highlight"></span>، يرجى إدخال بيانات سجل الجرد بكل أمانة</p>
+            <button class="btn3d" onclick="closeWelcome()">موافق</button>
+        </div>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div id="mainContent" style="display:none;">
+        <div class="container">
+            <img src="https://i.ibb.co/4gWkBBqM/Picsart-26-05-18-14-54-16-077.png" alt="الشعار" class="logo">
+            <h1>سجل جرد الأصول</h1>
+            <p class="sub">القوة التنفيذية - القسم الجنوبي</p>
+            <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+
+            <div class="card" id="mainCard">
+                <h3>إضافة أصل جديد</h3>
+                <div class="form-group">
+                    <label>اسم الأصل *</label>
+                    <input type="text" id="assetName" placeholder="اكتب اسم الأصل" required>
+                </div>
+                <div class="form-group">
+                    <label>الحالة *</label>
+                    <select id="condition" required>
+                        <option value="">اختر الحالة...</option>
+                        <option value="ممتاز">ممتاز</option>
+                        <option value="جيد">جيد</option>
+                        <option value="وسط">وسط</option>
+                        <option value="سيء">سيء</option>
+                        <option value="تالف">تالف</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>العدد *</label>
+                    <input type="number" id="quantity" placeholder="عدد القطع" min="1" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label>منظم الجرد</label>
+                    <input type="text" id="recipient" readonly required style="background:#2a2a3e; color:var(--gold); cursor:not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label>الموقع *</label>
+                    <select id="location" required onchange="toggleOtherLocation()">
+                        <option value="">اختر الموقع...</option>
+                        <option value="التنفيذية">التنفيذية</option>
+                        <option value="الإدارة">الإدارة</option>
+                        <option value="الديوان">الديوان</option>
+                        <option value="السجن">السجن</option>
+                        <option value="التحقيق">التحقيق</option>
+                        <option value="أخرى">أخرى</option>
+                    </select>
+                    <input type="text" id="otherLocation" placeholder="اذكر الموقع" style="display:none; margin-top:8px;">
+                </div>
+                <div class="form-group">
+                    <label>ملاحظات</label>
+                    <textarea id="notes" rows="2" placeholder="أي ملاحظات إضافية..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>صورة الأصل (اختياري)</label>
+                    <div class="image-upload">
+                        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleImageSelect(event)">
+                        <input type="file" id="galleryInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
+                        <button type="button" class="btn-image" onclick="document.getElementById('cameraInput').click()">كاميرا</button>
+                        <button type="button" class="btn-image" onclick="document.getElementById('galleryInput').click()">معرض</button>
+                        <img id="imagePreview" class="image-preview" src="" alt="معاينة">
+                        <div class="progress-ring" id="imageProgressRing">
+                            <svg viewBox="0 0 40 40">
+                                <circle class="bg" cx="20" cy="20" r="17"/>
+                                <circle class="fill" id="imageProgressCircle" cx="20" cy="20" r="17" stroke-dasharray="106.8" stroke-dashoffset="106.8"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                    <p style="text-align:center; color:var(--sub); margin-top:4px;" id="progressText">جاري الإرسال...</p>
+                </div>
+
+                <button class="btn3d" id="addBtn" onclick="addAsset()">إضافة الأصل</button>
+            </div>
+
+            <div class="footer">Design by Abu Azzam 🍂</div>
+        </div>
+    </div>
+
+    <!-- نافذة النجاح -->
+    <div class="modal" id="successModal">
+        <div class="modal-box">
+            <p>تمت إضافة الأصل بنجاح</p>
+            <button class="btn3d" onclick="document.getElementById('successModal').classList.remove('active')">موافق</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCqFmAYIMVN-gvshxVGf8EKEKocTs8NxJA",
+            authDomain: "abu-azzam-cbdfb.firebaseapp.com",
+            databaseURL: "https://abu-azzam-cbdfb-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "abu-azzam-cbdfb",
+            storageBucket: "abu-azzam-cbdfb.firebasestorage.app",
+            messagingSenderId: "931371358647",
+            appId: "1:931371358647:web:4191f045309356eec57032"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjT3E48jqXe1hO2VUkp5euKwMbKggek0HiFpE7vYV3oq3PW0wngh9pGwRpgVzbUSkW/exec';
+        let selectedImageBase64 = '';
+
+        // الوضع الليلي/النهاري
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+        (function() {
+            if (localStorage.getItem('theme') === 'light') {
+                document.body.classList.add('light-mode');
+                document.getElementById('themeToggle').textContent = '☀️';
+            }
+        })();
+
+        // استعادة آخر موقع
+        (function() {
+            const lastLocation = localStorage.getItem('lastLocation');
+            if (lastLocation) {
+                const locSelect = document.getElementById('location');
+                if (locSelect) locSelect.value = lastLocation;
+                if (lastLocation === 'أخرى') {
+                    document.getElementById('otherLocation').style.display = 'block';
+                }
+            }
+        })();
+
+        // التحقق من الجلسة المخزنة
+        (function() {
+            const storedId = localStorage.getItem('militaryId');
+            const storedName = localStorage.getItem('recipientName');
+            const storedNickname = localStorage.getItem('nickname');
+            if (storedId && storedName && storedNickname) {
+                document.getElementById('authModal').classList.remove('active');
+                document.getElementById('mainContent').style.display = 'block';
+                document.getElementById('recipient').value = storedName;
+                showWelcomeOnce(storedNickname);
+            }
+        })();
+
+        async function authenticate() {
+            const idInput = document.getElementById('militaryIdInput').value.trim().toUpperCase();
+            const msg = document.getElementById('authMsg');
+            if (!idInput) { msg.textContent = 'الرجاء إدخال الرقم العسكري'; return; }
+
+            try {
+                const snapshot = await db.ref('allowedPersonnel').child(idInput).once('value');
+                if (snapshot.exists()) {
+                    const person = snapshot.val();
+                    localStorage.setItem('militaryId', idInput);
+                    localStorage.setItem('recipientName', person.fullName);
+                    localStorage.setItem('nickname', person.nickname);
+                    document.getElementById('authModal').classList.remove('active');
+                    document.getElementById('mainContent').style.display = 'block';
+                    document.getElementById('recipient').value = person.fullName;
+                    showWelcomeOnce(person.nickname);
+                } else {
+                    msg.textContent = 'الرقم العسكري غير صحيح. لا يمكن المتابعة.';
+                }
+            } catch (error) {
+                msg.textContent = 'تعذر الاتصال بقاعدة البيانات. حاول لاحقاً.';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('militaryId');
+            localStorage.removeItem('recipientName');
+            localStorage.removeItem('nickname');
+            localStorage.removeItem('welcomed');
+            document.getElementById('mainContent').style.display = 'none';
+            document.getElementById('authModal').classList.add('active');
+            document.getElementById('militaryIdInput').value = '';
+            document.getElementById('authMsg').textContent = '';
+        }
+
+        function showWelcomeOnce(nickname) {
+            if (!localStorage.getItem('welcomed')) {
+                document.getElementById('welcomeNickname').textContent = nickname;
+                document.getElementById('welcomeModal').classList.add('active');
+                localStorage.setItem('welcomed', 'true');
+            }
+        }
+
+        function closeWelcome() { document.getElementById('welcomeModal').classList.remove('active'); }
+
+        function toggleOtherLocation() {
+            const loc = document.getElementById('location').value;
+            const other = document.getElementById('otherLocation');
+            other.style.display = loc === 'أخرى' ? 'block' : 'none';
+            if (loc !== 'أخرى') localStorage.setItem('lastLocation', loc);
+        }
+        document.getElementById('otherLocation').addEventListener('input', function() {
+            if (this.value.trim()) localStorage.setItem('lastLocation', 'أخرى');
+        });
+
+        async function compressImageWithProgress(base64, maxWidth, maxHeight, quality) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function() {
+                    let width = img.width; let height = img.height;
+                    if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
+                    if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = reject;
+                img.src = base64;
+            });
+        }
+
+        async function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const ring = document.getElementById('imageProgressRing');
+                const circle = document.getElementById('imageProgressCircle');
+                const circumference = 106.8;
+                ring.style.display = 'inline-block';
+                circle.style.strokeDashoffset = circumference;
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 15;
+                    const offset = circumference - (progress / 100) * circumference;
+                    circle.style.strokeDashoffset = offset;
+                    if (progress >= 90) clearInterval(interval);
+                }, 100);
+                try {
+                    selectedImageBase64 = await compressImageWithProgress(e.target.result, 800, 800, 0.7);
+                } catch (err) { selectedImageBase64 = e.target.result; }
+                clearInterval(interval);
+                circle.style.strokeDashoffset = 0;
+                setTimeout(() => { ring.style.display = 'none'; }, 300);
+                document.getElementById('imagePreview').src = selectedImageBase64;
+                document.getElementById('imagePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function addAsset() {
+            const name = document.getElementById('assetName').value.trim();
+            const condition = document.getElementById('condition').value;
+            const quantity = document.getElementById('quantity').value;
+            const recipient = document.getElementById('recipient').value;
+            let location = document.getElementById('location').value;
+            const notes = document.getElementById('notes').value.trim();
+
+            if (location === 'أخرى') {
+                location = document.getElementById('otherLocation').value.trim();
+                if (!location) return alert('الرجاء كتابة الموقع');
+                localStorage.setItem('lastLocation', 'أخرى');
+            } else localStorage.setItem('lastLocation', location);
+
+            if (!name) return alert('الرجاء إدخال اسم الأصل');
+            if (!condition) return alert('الرجاء اختيار الحالة');
+            if (!location) return alert('الرجاء اختيار الموقع');
+
+            const addBtn = document.getElementById('addBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+
+            addBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressText.textContent = 'جاري الإرسال...';
+
+            let width = 0;
+            const interval = setInterval(() => { width += 10; if (width <= 90) progressFill.style.width = width + '%'; }, 150);
+
+            const payload = { name, category: '', condition, quantity, recipient, location, notes, imageBase64: selectedImageBase64 };
+
+            try {
+                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                clearInterval(interval);
+                progressFill.style.width = '100%';
+                progressText.textContent = 'تمت الإضافة بنجاح';
+                setTimeout(() => {
+                    document.getElementById('assetName').value = '';
+                    document.getElementById('condition').selectedIndex = 0;
+                    document.getElementById('quantity').value = '1';
+                    document.getElementById('otherLocation').value = '';
+                    document.getElementById('otherLocation').style.display = 'none';
+                    document.getElementById('notes').value = '';
+                    document.getElementById('imagePreview').style.display = 'none';
+                    selectedImageBase64 = '';
+                    progressContainer.style.display = 'none';
+                    addBtn.disabled = false;
+                    document.getElementById('successModal').classList.add('active');
+                }, 1000);
+            } catch (e) {
+                clearInterval(interval);
+                progressText.textContent = 'فشل الاتصال';
+                setTimeout(() => { progressContainer.style.display = 'none'; addBtn.disabled = false; }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>
